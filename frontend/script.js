@@ -122,8 +122,15 @@ async function loadCombosFromFile(type) {
         const res = await fetch(file + '?t=' + Date.now()); // ป้องกัน cache
         if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
         const text = await res.text();
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-        arr = lines.map(line => ({ combo: line }));
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+        // แปลงทุกบรรทัดเป็น user:pass:cookie (ถ้าไม่มี cookie ให้เติมค่าว่าง)
+        arr = lines.map(line => {
+            let parts = line.split(":");
+            let user = parts[0] || '';
+            let pass = parts[1] || '';
+            let cookie = parts.slice(2).join(":");
+            return { combo: user + ":" + pass + ":" + (cookie ? cookie : "") };
+        });
     } catch (e) {
         alert('โหลดไฟล์ผลลัพธ์ไม่สำเร็จ: ' + e.message);
     }
@@ -133,10 +140,12 @@ async function loadCombosFromFile(type) {
 }
 
 async function copyCombos(type) {
-    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
+    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก (แปลง user:pass:cookie เสมอ)
     await loadCombosFromFile(type);
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
-    let text = arr.map(item => item.combo).join('\n');
+    // กรองเฉพาะบรรทัดที่มี user:pass (กันกรณีมีบรรทัดว่างหรือ format เพี้ยน)
+    let lines = arr.map(item => item.combo).filter(line => line && line.includes(":"));
+    let text = lines.join('\n');
     if (text) {
         navigator.clipboard.writeText(text).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
