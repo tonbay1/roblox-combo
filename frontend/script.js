@@ -57,7 +57,61 @@ async function submitCombos() {
         // อัปเดต summary
         document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
     }));
+
+    // --- บันทึกผลลัพธ์ success และ failed ลงไฟล์ผ่าน backend ---
+    // ถ้ามี backend API /api/writeResult ให้ส่งข้อมูลไปบันทึก
+    try {
+        await fetch('/api/writeResult', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                success: window.comboSuccess.map(item => item.combo),
+                failed: window.comboFailed.map(item => item.combo)
+            })
+        });
+    } catch (e) {
+        console.error('บันทึกไฟล์ผลลัพธ์ไม่สำเร็จ:', e);
+    }
 }
+
+// โหลด combos จากไฟล์ (ผลลัพธ์ล่าสุด)
+async function loadCombosFromFile(type) {
+    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
+    let arr = [];
+    try {
+        const res = await fetch(file + '?t=' + Date.now());
+        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
+        const text = await res.text();
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        arr = lines.map(line => ({ combo: line }));
+    } catch (e) {
+        alert('โหลดไฟล์ผลลัพธ์ไม่สำเร็จ: ' + e.message);
+    }
+    return arr;
+}
+
+// คัดลอก combos จากไฟล์ผลลัพธ์ล่าสุด
+async function copyCombos(type) {
+    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
+    let arr = await loadCombosFromFile(type);
+    let seen = new Set();
+    let combos = arr.map(item => {
+        let parts = item.combo.split(":");
+        let user = parts[0] || '';
+        let pass = parts[1] || '';
+        let cookies = parts.slice(2).join(":");
+        return cookies ? (user + ":" + pass + ":" + cookies) : (user + ":" + pass);
+    }).map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
+    let text = combos.join('\n');
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
+        });
+    } else {
+        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
+    }
+}
+
 
 
 function doSplit() {
