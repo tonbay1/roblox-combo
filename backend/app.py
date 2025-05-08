@@ -49,13 +49,20 @@ def validate_cookies():
             results.append({'idx': idx, 'combo': f'{user}:{passwd}', 'status': 'failed'})
             failed_lines.append(f'{user}:{passwd}:{cookie}')
 
-    # Save results to files
+    # Debug log
+    print('combos:', combos)
+    print('success_lines:', success_lines)
+    print('failed_lines:', failed_lines)
+
+    # Save results to files (append mode)
     result_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
     os.makedirs(result_dir, exist_ok=True)
-    with open(os.path.join(result_dir, 'validate_success.txt'), 'w', encoding='utf-8') as f:
-        f.write('\n'.join(success_lines))
-    with open(os.path.join(result_dir, 'validate_false.txt'), 'w', encoding='utf-8') as f:
-        f.write('\n'.join(failed_lines))
+    with open(os.path.join(result_dir, 'validate_success.txt'), 'a', encoding='utf-8') as f:
+        for line in success_lines:
+            f.write(line + '\n')
+    with open(os.path.join(result_dir, 'validate_false.txt'), 'a', encoding='utf-8') as f:
+        for line in failed_lines:
+            f.write(line + '\n')
 
     return jsonify(results)
 
