@@ -1,0 +1,10 @@
+body { font-family: Arial, sans-serif; background: #181818; color: #eee; padding: 2em; }
+textarea { width: 100%; height: 120px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #444; }
+button { padding: 8px 24px; background: #4caf50; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+#result { margin-top: 20px; }
+.combo-row { display: flex; align-items: center; margin-bottom: 4px; }
+.status-dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.status-dot.green { background: #4caf50; }
+.status-dot.red { background: #f44336; }
+.combo-user { flex: 1; }
+.summary { margin-top: 15px; font-weight: bold; }
