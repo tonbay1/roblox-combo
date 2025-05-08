@@ -146,22 +146,22 @@ async function loadCombosFromFile(type) {
 }
 
 async function copyCombos(type) {
-    // โหลดไฟล์ผลลัพธ์ของ session นี้เท่านั้น
+    // รองรับการคัดลอกทั้ง 2 ปุ่ม (success/failed) โดยดูจาก session_id ล่าสุด
     let file = type === 'success' ? window.successFile : window.failedFile;
     if (!file) {
         alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
         return;
     }
     try {
-        let res = await fetch(`/result/${file}`);
+        // ดึงข้อมูลจาก server ตาม session_id ล่าสุด
+        let res = await fetch(`/result/${file}?t=${Date.now()}`); // ป้องกัน cache
         if (!res.ok) throw new Error();
         let text = await res.text();
         if (text && text.trim()) {
-            navigator.clipboard.writeText(text.trim()).then(() => {
-                alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
-            });
+            await navigator.clipboard.writeText(text.trim());
+            alert('คัดลอกบัญชี' + (type === 'success' ? 'ที่ใช้ได้' : 'ที่ใช้ไม่ได้') + 'แล้ว!');
         } else {
-            alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
+            alert('ไม่มีบัญชี' + (type === 'success' ? 'ที่ใช้ได้' : 'ที่ใช้ไม่ได้') + 'ให้คัดลอก');
         }
     } catch (e) {
         alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
