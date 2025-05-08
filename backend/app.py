@@ -25,22 +25,38 @@ def serve_static(path):
 def validate_cookies():
     combos = request.json.get('combos', [])
     results = []
+    success_lines = []
+    failed_lines = []
     for idx, combo in enumerate(combos, 1):
         parts = combo.strip().split(':')
         if len(parts) < 3:
             results.append({'idx': idx, 'combo': combo, 'status': 'invalid', 'reason': 'format'})
+            failed_lines.append(combo)
             continue
         user, passwd, cookie = parts[0], parts[1], ':'.join(parts[2:])
         helper = RobloxHelper(cookie)
         try:
             helper.get_csrf()
             user_id, user_name = helper.get_authenticated_user()
+            combo_line = f'{user}:{passwd}:{cookie}'
             if user_id:
                 results.append({'idx': idx, 'combo': f'{user}:{passwd}', 'status': 'success'})
+                success_lines.append(combo_line)
             else:
                 results.append({'idx': idx, 'combo': f'{user}:{passwd}', 'status': 'failed'})
+                failed_lines.append(combo_line)
         except Exception as e:
             results.append({'idx': idx, 'combo': f'{user}:{passwd}', 'status': 'failed'})
+            failed_lines.append(f'{user}:{passwd}:{cookie}')
+
+    # Save results to files
+    result_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
+    os.makedirs(result_dir, exist_ok=True)
+    with open(os.path.join(result_dir, 'validate_success.txt'), 'w', encoding='utf-8') as f:
+        f.write('\n'.join(success_lines))
+    with open(os.path.join(result_dir, 'validate_false.txt'), 'w', encoding='utf-8') as f:
+        f.write('\n'.join(failed_lines))
+
     return jsonify(results)
 
 if __name__ == '__main__':
