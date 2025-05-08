@@ -7,7 +7,7 @@ app = Flask(__name__)
 # เพิ่มเติมสำหรับ serve ไฟล์ result
 @app.route('/result/<filename>')
 def serve_result_file(filename):
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../account/result'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
     return send_from_directory(base_dir, filename)
 
 # Serve frontend static files
