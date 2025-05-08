@@ -179,7 +179,15 @@ async function copyCombos(type) {
     // ลบบรรทัดว่างและ duplicate
     let seen = new Set();
     let lines = text.split('\n').map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
-    let out = lines.join('\n');
+    // บังคับให้ทุกบรรทัดเป็น user:pass:cookies (ถ้าไม่มี cookies ให้เติมค่าว่าง)
+    let out = lines.map(line => {
+        let parts = line.split(":");
+        let user = parts[0] || '';
+        let pass = parts[1] || '';
+        let cookies = parts.slice(2).join(":");
+        // ถ้าไม่มี cookies ให้เติมช่องว่าง
+        return user + ":" + pass + ":" + (cookies ? cookies : "");
+    }).join('\n');
     if (out) {
         navigator.clipboard.writeText(out).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
