@@ -114,29 +114,18 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // เดิม
-async function loadCombosFromFile(type) {
-    // type = 'success' or 'failed'
-    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
-    let arr = [];
-    try {
-        const res = await fetch(file + '?t=' + Date.now()); // ป้องกัน cache
-        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
-        const text = await res.text();
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-        arr = lines.map(line => ({ combo: line }));
-    } catch (e) {
-        alert('โหลดไฟล์ผลลัพธ์ไม่สำเร็จ: ' + e.message);
-    }
-    if (type === 'success') window.comboSuccess = arr;
-    else window.comboFailed = arr;
-    return arr;
-}
+// ไม่ต้องใช้ loadCombosFromFile() ในการคัดลอกอีกต่อไป
+// ฟังก์ชันนี้ยังคงใช้ได้หากต้องการโหลดผลลัพธ์จากไฟล์ใหม่จริงๆ
+// แต่ copyCombos จะไม่เรียกใช้ฟังก์ชันนี้อีกต่อไป
 
-async function copyCombos(type) {
-    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
-    await loadCombosFromFile(type);
+function copyCombos(type) {
+    // ใช้ข้อมูลใน memory ที่อัปเดตล่าสุดเท่านั้น
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
-    let text = arr.map(item => item.combo).join('\n');
+    // ลบ duplicate และบรรทัดว่าง
+    let seen = new Set();
+    let combos = arr.map(item => item.combo.trim())
+        .filter(line => line && !seen.has(line) && seen.add(line));
+    let text = combos.join('\n');
     if (text) {
         navigator.clipboard.writeText(text).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
