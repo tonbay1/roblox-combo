@@ -97,7 +97,12 @@ window.addEventListener('DOMContentLoaded', function() {
 function copyCombos(type) {
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
     let text = arr.map(item => {
-        return item.cookies ? `${item.combo}:${item.cookies}` : item.combo;
+        // บังคับให้เป็น user:pass:cookies เสมอ (ถ้าไม่มี cookies ให้ว่าง)
+        let parts = item.combo.split(':');
+        let user = parts[0] || '';
+        let pass = parts[1] || '';
+        let cookies = item.cookies !== undefined ? item.cookies : '';
+        return `${user}:${pass}:${cookies}`;
     }).join('\n');
     if (text) {
         navigator.clipboard.writeText(text).then(() => {
