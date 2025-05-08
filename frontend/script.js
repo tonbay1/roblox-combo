@@ -24,24 +24,27 @@ async function submitCombos() {
     });
     document.getElementById('table-body').innerHTML = rows;
     document.getElementById('table-summary').innerHTML = `<div class="summary">True: 0 | Failed: 0 | Waiting: ${combos.length}</div>`;
-
-    // ส่ง combos ทั้งหมดไป backend ทีเดียว
-    let res = await fetch('/api/validate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({combos})
-    });
-    let data = await res.json();
-    let newRows = '';
-    data.forEach((item, idx) => {
+    // ไล่เช็คทีละอันแบบ async/await (1:1)
+    for (let idx = 0; idx < combos.length; idx++) {
+        let combo = combos[idx];
+        let res = await fetch('/api/validate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({combos: [combo]})
+        });
+        let data = await res.json();
+        let item = data[0];
+        let dotClass = item.status === 'success' ? 'green' : 'red';
+        let dot = `<span class="status-dot ${dotClass}"></span>`;
+        // Render only user:pass in the table after checking
         let user = '', pass = '';
         let parts = item.combo.split(':');
         user = parts[0] || '';
         pass = parts[1] || '';
         let showCombo = `${user}:${pass}`;
-        let dotClass = item.status === 'success' ? 'green' : 'red';
-        let dot = `<span class="status-dot ${dotClass}"></span>`;
-        newRows += `<tr id="row-${idx}"><td>${idx + 1}</td><td>${showCombo}</td><td id="status-${idx}">${dot}</td></tr>`;
+        document.querySelector(`#row-${idx} td:nth-child(2)`).textContent = showCombo;
+        document.getElementById('status-' + idx).innerHTML = dot;
+        // อัปเดต success/failed
         if (item.status === 'success') {
             success++;
             window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
@@ -49,9 +52,9 @@ async function submitCombos() {
             failed++;
             window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
         }
-    });
-    document.getElementById('table-body').innerHTML = newRows;
-    document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: 0</div>`;
+        // อัปเดต summary
+        document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
+    }
 }
 
 function doSplit() {
