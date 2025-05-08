@@ -13,14 +13,11 @@ async function submitCombos() {
     const input = document.getElementById('combo-input').value.trim();
     if (!input) return;
     const combos = input.split('\n').map(l => l.trim()).filter(Boolean);
-    // เตรียมตารางแสดงผลลัพธ์แบบเรียลไทม์
+    window.combos = combos;
     let rows = '';
     window.comboSuccess = [];
     window.comboFailed = [];
-    let statusArr = combos.map(() => 'waiting');
-    let results = new Array(combos.length);
     let success = 0, failed = 0;
-
     // สร้างแถวตารางเริ่มต้น
     combos.forEach((combo, idx) => {
         let user = '', pass = '';
@@ -32,41 +29,34 @@ async function submitCombos() {
     });
     document.getElementById('table-body').innerHTML = rows;
     document.getElementById('table-summary').innerHTML = `<div class="summary">True: 0 | Failed: 0 | Waiting: ${combos.length}</div>`;
-    // ส่ง combos ทั้งหมดไป backend ทีเดียว พร้อม session_id
+
+    // ส่ง POST ทีละ combo แบบ real-time
     for (let idx = 0; idx < combos.length; idx++) {
         let combo = combos[idx];
-        document.getElementById(`status-${idx}`).innerHTML = '<span class="status-dot"></span>';
-        try {
-            let res = await fetch('/api/validate', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({combos: [combo], session_id: window.sessionId})
-            });
-            let data = await res.json();
-            if (data.success_file) window.successFile = data.success_file;
-            if (data.failed_file) window.failedFile = data.failedFile;
-            rows = '';
-            (data.results || []).forEach((item, idx) => {
-                let user = '', pass = '';
-                let parts = item.combo.split(':');
-                user = parts[0] || '';
-                pass = parts[1] || '';
-                let showCombo = `${user}:${pass}`;
-                let dotClass = item.status === 'success' ? 'green' : 'red';
-                let dot = `<span class="status-dot ${dotClass}"></span>`;
-                rows += `<tr id="row-${idx}"><td>${idx + 1}</td><td>${showCombo}</td><td id="status-${idx}">${dot}</td></tr>`;
-                if (item.status === 'success') {
-                    success++;
-                    window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
-                } else {
-                    failed++;
-                    window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
-                }
-            });
-        } catch (e) {
-            console.error(e);
+        let res = await fetch('/api/validate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({combos: [combo], session_id: window.sessionId})
+        });
+        let data = await res.json();
+        let item = (data.results || [])[0];
+        let dotClass = item && item.status === 'success' ? 'green' : 'red';
+        document.getElementById(`status-${idx}`).innerHTML = `<span class="status-dot ${dotClass}"></span>`;
+        if (item && item.status === 'success') {
+            success++;
+            window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
+        } else {
+            failed++;
+            window.comboFailed.push({ combo: item ? item.combo : combo, cookies: item ? (item.cookies || '') : '' });
         }
+        // อัปเดต summary bar
+        document.getElementById('table-summary').innerHTML = `<div class=\"summary\">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
     }
+    // หลัง loop จบ
+    document.getElementById('table-summary').innerHTML = `<div class=\"summary\">True: ${success} | Failed: ${failed} | Waiting: 0</div>`;
+    // ตั้งชื่อไฟล์ผลลัพธ์สำหรับปุ่มคัดลอก
+    window.successFile = 'validate_success_' + window.sessionId + '.txt';
+    window.failedFile = 'validate_false_' + window.sessionId + '.txt';
 }
 
 function doSplit() {
@@ -159,9 +149,11 @@ async function copyCombos(type) {
         let res = await fetch(`/result/${file}`);
         if (!res.ok) throw new Error();
         let text = await res.text();
-        if (text && text.trim()) {
-            navigator.clipboard.writeText(text.trim()).then(() => {
-                alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
+        // กรองเฉพาะบรรทัดที่ไม่ว่าง (กรณีไฟล์มีแต่บรรทัดว่าง)
+        let lines = (text || '').split('\n').map(line => line.trim()).filter(line => line);
+        if (lines.length > 0) {
+            navigator.clipboard.writeText(lines.join('\n')).then(() => {
+                alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ทั้งหมดแล้ว!');
             });
         } else {
             alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
@@ -170,3 +162,4 @@ async function copyCombos(type) {
         alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
     }
 }
+
