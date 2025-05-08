@@ -34,6 +34,11 @@ def validate_cookies():
             failed_lines.append(combo)
             continue
         user, passwd, cookie = parts[0], parts[1], ':'.join(parts[2:])
+        # บังคับ prefix cookie ให้ถูกต้อง
+        cookie = cookie.strip()
+        prefix = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_'
+        if not cookie.startswith(prefix):
+            cookie = prefix + cookie
         helper = RobloxHelper(cookie)
         try:
             helper.get_csrf()
