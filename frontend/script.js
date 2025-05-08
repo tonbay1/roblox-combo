@@ -19,9 +19,7 @@ async function submitCombos() {
     let rows = '';
     let success = 0, failed = 0;
     data.forEach((item, idx) => {
-        let dot = item.status === 'success'
-            ? '<span class="status-dot green"></span>'
-            : '<span class="status-dot red"></span>';
+        let dot = `<td><span class="status-dot ${item.status === 'success' ? 'green' : 'red'}"></span></td>`;
         if (item.status === 'success') {
             success++;
             window.comboSuccess.push({
