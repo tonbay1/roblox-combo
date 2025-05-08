@@ -158,27 +158,19 @@ async function copyCombos(type) {
         alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
         return;
     }
-    // แปลงเป็นข้อความ user:pass:cookie (ถ้ามี cookie)
-    let text = arr.map(o => {
-    // o.combo อาจเป็น user:pass หรือ user:pass:cookie (แต่ปกติเป็น user:pass)
-    if (o.cookies && o.cookies.trim()) {
-        return o.combo + ':' + o.cookies;
-    } else {
-        // พยายามแยกจาก o.combo ถ้ามี cookie ติดมาด้วย
-        let parts = o.combo.split(':');
-        if (parts.length > 2) {
-            return o.combo; // มี cookie ติดอยู่แล้ว
+    try {
+        let res = await fetch(`/result/${file}`);
+        if (!res.ok) throw new Error();
+        let text = await res.text();
+        if (text && text.trim()) {
+            // ตรวจสอบว่าแต่ละบรรทัดมี user:pass:cookie ครบหรือไม่ ถ้าใช่คัดลอกทั้งหมด
+            navigator.clipboard.writeText(text.trim()).then(() => {
+                alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
+            });
         } else {
-            return o.combo; // ไม่มี cookie
+            alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
         }
-    }
-}).join('\n');
-    if (text && text.trim()) {
-        navigator.clipboard.writeText(text.trim()).then(() => {
-            alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
-        });
-    } else {
-        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
+    } catch (e) {
+        alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
     }
 }
-
