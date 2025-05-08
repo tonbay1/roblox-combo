@@ -6,10 +6,37 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Roblox Combo Checker</h2>
-    <textarea id="combo-input" placeholder="user:pass:cookie\nuser:pass:cookie"></textarea>
-    <button onclick="submitCombos()">ตรวจสอบ</button>
-    <div id="result"></div>
+    <div class="main-container">
+        <div class="header-banner">
+            <span>Genhubs</span>
+            <span class="monitor-title">Monitor</span>
+        </div>
+        <div class="input-section">
+            <textarea id="combo-input" placeholder="username:password:cookie\nusername:password:cookie"></textarea>
+            <button class="check-btn" onclick="submitCombos()">Check</button>
+        </div>
+        <div class="copy-btn-section">
+            <button class="copy-btn" id="copy-success" onclick="copyCombos('success')">Copy Success</button>
+            <button class="copy-btn" id="copy-failed" onclick="copyCombos('failed')">Copy Failed</button>
+        </div>
+        <div id="table-container">
+            <div class="table-card">
+                <table id="combo-table">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Username:Password</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Rows will be inserted here -->
+                    </tbody>
+                </table>
+                <div id="table-summary"></div>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
