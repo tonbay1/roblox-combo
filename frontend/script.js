@@ -17,8 +17,6 @@ async function submitCombos() {
     let rows = '';
     window.comboSuccess = [];
     window.comboFailed = [];
-    let statusArr = combos.map(() => 'waiting');
-    let results = new Array(combos.length);
     let success = 0, failed = 0;
 
     // สร้างแถวตารางเริ่มต้น
@@ -32,35 +30,46 @@ async function submitCombos() {
     });
     document.getElementById('table-body').innerHTML = rows;
     document.getElementById('table-summary').innerHTML = `<div class="summary">True: 0 | Failed: 0 | Waiting: ${combos.length}</div>`;
-    // ส่ง combos ทั้งหมดไป backend ทีเดียว พร้อม session_id
-    let res = await fetch('/api/validate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({combos, session_id: window.sessionId})
-    });
-    let data = await res.json();
-    if (data.success_file) window.successFile = data.success_file;
-    if (data.failed_file) window.failedFile = data.failed_file;
-    rows = '';
-    (data.results || []).forEach((item, idx) => {
-        let user = '', pass = '';
-        let parts = item.combo.split(':');
-        user = parts[0] || '';
-        pass = parts[1] || '';
-        let showCombo = `${user}:${pass}`;
-        let dotClass = item.status === 'success' ? 'green' : 'red';
-        let dot = `<span class="status-dot ${dotClass}"></span>`;
-        rows += `<tr id="row-${idx}"><td>${idx + 1}</td><td>${showCombo}</td><td id="status-${idx}">${dot}</td></tr>`;
-        if (item.status === 'success') {
-            success++;
-            window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
-        } else {
+
+    // เช็คบัญชีทีละอันแบบเรียลไทม์
+    for (let idx = 0; idx < combos.length; idx++) {
+        let combo = combos[idx];
+        // แสดงสถานะรอ
+        document.getElementById(`status-${idx}`).innerHTML = '<span class="status-dot"></span>';
+        try {
+            let res = await fetch('/api/validate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({combos: [combo], session_id: window.sessionId})
+            });
+            let data = await res.json();
+            if (idx === 0) { // รับชื่อไฟล์รอบแรก
+                if (data.success_file) window.successFile = data.success_file;
+                if (data.failed_file) window.failedFile = data.failed_file;
+            }
+            let item = (data.results || [])[0];
+            let user = '', pass = '';
+            let parts = item.combo.split(':');
+            user = parts[0] || '';
+            pass = parts[1] || '';
+            let dotClass = item.status === 'success' ? 'green' : 'red';
+            let dot = `<span class="status-dot ${dotClass}"></span>`;
+            document.getElementById(`status-${idx}`).innerHTML = dot;
+            if (item.status === 'success') {
+                success++;
+                window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
+            } else {
+                failed++;
+                window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
+            }
+            document.getElementById('table-summary').innerHTML = `<div class=\"summary\">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
+        } catch (e) {
+            document.getElementById(`status-${idx}`).innerHTML = '<span class="status-dot red"></span>';
             failed++;
-            window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
+            window.comboFailed.push({ combo: combo, cookies: '' });
+            document.getElementById('table-summary').innerHTML = `<div class=\"summary\">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
         }
-    });
-    document.getElementById('table-body').innerHTML = rows;
-    document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: 0</div>`;
+    }
 }
 
 function doSplit() {
