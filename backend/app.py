@@ -21,8 +21,8 @@ def serve_index():
 def serve_static(path):
     return send_from_directory(FRONTEND_DIR, path)
 
-@app.route('/api/validateCookies', methods=['POST'])
-def validate_cookies():
+@app.route('/api/validate', methods=['POST'])
+def validate():
     combos = request.json.get('combos', [])
     results = []
     success_lines = []
