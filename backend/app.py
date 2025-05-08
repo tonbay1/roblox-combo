@@ -70,11 +70,17 @@ def validate():
     print('success_lines:', success_lines)
     print('failed_lines:', failed_lines)
 
+    # DEBUG: show code file path and session_id
+    print('[DEBUG] __file__:', __file__)
+    print('[DEBUG] session_id:', session_id)
     # Save results to files (write mode, per session)
     result_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
+    print('[DEBUG] result_dir:', result_dir)
     os.makedirs(result_dir, exist_ok=True)
     success_file = f'validate_success_{session_id}.txt'
     failed_file = f'validate_false_{session_id}.txt'
+    print('[DEBUG] success_file:', success_file)
+    print('[DEBUG] failed_file:', failed_file)
     with open(os.path.join(result_dir, success_file), 'w', encoding='utf-8') as f:
         for line in success_lines:
             f.write(line + '\n')
@@ -83,8 +89,8 @@ def validate():
             f.write(line + '\n')
 
     # DEBUG: print path for confirmation
-    print('Write success_file:', os.path.join(result_dir, success_file))
-    print('Write failed_file:', os.path.join(result_dir, failed_file))
+    print('[DEBUG] Write success_file:', os.path.join(result_dir, success_file))
+    print('[DEBUG] Write failed_file:', os.path.join(result_dir, failed_file))
 
     return jsonify({
         'results': results,
