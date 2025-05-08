@@ -32,30 +32,25 @@ async function submitCombos() {
     });
     document.getElementById('table-body').innerHTML = rows;
     document.getElementById('table-summary').innerHTML = `<div class="summary">True: 0 | Failed: 0 | Waiting: ${combos.length}</div>`;
-    // ไล่เช็คทีละอันแบบ async/await (1:1)
-    for (let idx = 0; idx < combos.length; idx++) {
-        let combo = combos[idx];
-        let res = await fetch('/api/validate', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({combos: [combo], session_id: window.sessionId})
-        });
-        let data = await res.json();
-        // เก็บชื่อไฟล์ผลลัพธ์ของ session นี้ (ใช้ไฟล์ล่าสุดที่ได้)
-        if (data.success_file) window.successFile = data.success_file;
-        if (data.failed_file) window.failedFile = data.failed_file;
-        let item = data.results && data.results[0] ? data.results[0] : data[0];
-        let dotClass = item.status === 'success' ? 'green' : 'red';
-        let dot = `<span class="status-dot ${dotClass}"></span>`;
-        // Render only user:pass in the table after checking
+    // ส่ง combos ทั้งหมดไป backend ทีเดียว พร้อม session_id
+    let res = await fetch('/api/validate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({combos, session_id: window.sessionId})
+    });
+    let data = await res.json();
+    if (data.success_file) window.successFile = data.success_file;
+    if (data.failed_file) window.failedFile = data.failedFile;
+    rows = '';
+    (data.results || []).forEach((item, idx) => {
         let user = '', pass = '';
         let parts = item.combo.split(':');
         user = parts[0] || '';
         pass = parts[1] || '';
         let showCombo = `${user}:${pass}`;
-        document.querySelector(`#row-${idx} td:nth-child(2)`).textContent = showCombo;
-        document.getElementById('status-' + idx).innerHTML = dot;
-        // อัปเดต success/failed
+        let dotClass = item.status === 'success' ? 'green' : 'red';
+        let dot = `<span class="status-dot ${dotClass}"></span>`;
+        rows += `<tr id="row-${idx}"><td>${idx + 1}</td><td>${showCombo}</td><td id="status-${idx}">${dot}</td></tr>`;
         if (item.status === 'success') {
             success++;
             window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
@@ -63,9 +58,9 @@ async function submitCombos() {
             failed++;
             window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
         }
-        // อัปเดต summary
-        document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
-    }
+    });
+    document.getElementById('table-body').innerHTML = rows;
+    document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: 0</div>`;
 }
 
 function doSplit() {
