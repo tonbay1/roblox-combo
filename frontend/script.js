@@ -114,20 +114,35 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // เดิม
-function copyCombos(type) {
+async function loadCombosFromFile(type) {
+    // type = 'success' or 'failed'
+    let file = type === 'success' ? '../account/result/validate_success.txt' : '../account/result/validate_false.txt';
+    let arr = [];
+    try {
+        const res = await fetch(file + '?t=' + Date.now()); // ป้องกัน cache
+        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
+        const text = await res.text();
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        arr = lines.map(line => ({ combo: line }));
+    } catch (e) {
+        alert('โหลดไฟล์ผลลัพธ์ไม่สำเร็จ: ' + e.message);
+    }
+    if (type === 'success') window.comboSuccess = arr;
+    else window.comboFailed = arr;
+    return arr;
+}
+
+async function copyCombos(type) {
+    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
+    await loadCombosFromFile(type);
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
     let text = arr.map(item => {
-        // ดึง user:pass:cookies เสมอ (cookies อาจมี : ได้)
         let user = '', pass = '', cookies = '';
         if (item.combo) {
             let parts = item.combo.split(':');
             user = parts[0] || '';
             pass = parts[1] || '';
             cookies = parts.slice(2).join(':');
-        }
-        // ถ้ามี item.cookies ให้ใช้แทน cookies ที่แยกจาก combo
-        if (item.cookies !== undefined && item.cookies !== null && item.cookies !== '') {
-            cookies = item.cookies;
         }
         return `${user}:${pass}:${cookies}`;
     }).join('\n');
