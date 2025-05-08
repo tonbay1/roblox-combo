@@ -5,6 +5,14 @@ async function submitCombos() {
     const input = document.getElementById('combo-input').value.trim();
     if (!input) return;
     const combos = input.split('\n').map(l => l.trim()).filter(Boolean);
+    // ตรวจสอบรูปแบบ user:pass:cookie
+    for (const combo of combos) {
+        const parts = combo.split(':');
+        if (parts.length !== 3) {
+            alert('รูปแบบข้อมูลไม่ถูกต้อง: ' + combo);
+            return;
+        }
+    }
     // เตรียมตารางแสดงผลลัพธ์แบบเรียลไทม์
     let rows = '';
     window.comboSuccess = [];
@@ -92,7 +100,8 @@ async function copyCombos(type) {
         let user = parts[0] || '';
         let pass = parts[1] || '';
         let cookies = parts.slice(2).join(":");
-        return cookies ? (user + ":" + pass + ":" + cookies) : (user + ":" + pass);
+        // บังคับเติม : เสมอ (user:pass:cookie) ถ้าไม่มี cookie ให้เว้นว่าง
+        return user + ":" + pass + ":" + (cookies ? cookies : "");
     }).map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
     let text = combos.join('\n');
     if (text) {
@@ -103,6 +112,25 @@ async function copyCombos(type) {
         alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
     }
 }
+
+    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
+    let arr = await loadCombosFromFile(type);
+    let seen = new Set();
+    let combos = arr.map(item => {
+        let parts = item.combo.split(":");
+        let user = parts[0] || '';
+        let pass = parts[1] || '';
+        let cookies = parts.slice(2).join(":");
+        return cookies ? (user + ":" + pass + ":" + cookies) : (user + ":" + pass);
+    }).map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
+    let text = combos.join('\n');
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
+        });
+    } else {
+        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
+    }
 
 
 
@@ -164,26 +192,36 @@ window.addEventListener('DOMContentLoaded', function() {
 // ฟังก์ชันนี้ยังคงใช้ได้หากต้องการโหลดผลลัพธ์จากไฟล์ใหม่จริงๆ
 // แต่ copyCombos จะไม่เรียกใช้ฟังก์ชันนี้อีกต่อไป
 
-function copyCombos(type) {
-    // ใช้ข้อมูลใน memory ที่อัปเดตล่าสุดเท่านั้น
-    let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
-    // ลบ duplicate และบรรทัดว่าง โดยใช้ user:pass:cookies (cookies ใช้จาก combo เดิมเท่านั้น)
+async function copyCombos(type) {
+    // โหลดผลลัพธ์ล่าสุดจากไฟล์ (จะได้ user:pass:cookies ครบ)
+    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
+    let text = '';
+    try {
+        const res = await fetch(file + '?t=' + Date.now());
+        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
+        text = await res.text();
+    } catch (e) {
+        alert('ไม่พบไฟล์ผลลัพธ์');
+        return;
+    }
+    // ลบบรรทัดว่างและ duplicate
     let seen = new Set();
-    let combos = arr.map(item => {
-        let parts = item.combo.split(":");
+    let lines = text.split('\n').map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
+    // บังคับให้ทุกบรรทัดเป็น user:pass:cookies (ถ้าไม่มี cookies ให้เติมค่าว่าง)
+    let out = lines.map(line => {
+        let parts = line.split(":");
         let user = parts[0] || '';
         let pass = parts[1] || '';
-        // cookies ใช้จาก combo เดิมเท่านั้น (slice(2).join(':'))
         let cookies = parts.slice(2).join(":");
-        // ถ้ามี cookies จริง ให้ต่อ :cookies, ถ้าไม่มีให้เป็น user:pass
-        return cookies ? (user + ":" + pass + ":" + cookies) : (user + ":" + pass);
-    }).map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
-    let text = combos.join('\n');
-    if (text) {
-        navigator.clipboard.writeText(text).then(() => {
+        // ถ้าไม่มี cookies ให้เติมช่องว่าง
+        return user + ":" + pass + ":" + (cookies ? cookies : "");
+    }).join('\n');
+    if (out) {
+        navigator.clipboard.writeText(out).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
         });
     } else {
         alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
     }
 }
+
