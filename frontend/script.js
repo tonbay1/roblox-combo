@@ -40,7 +40,7 @@ async function submitCombos() {
     });
     let data = await res.json();
     if (data.success_file) window.successFile = data.success_file;
-    if (data.failed_file) window.failedFile = data.failedFile;
+    if (data.failed_file) window.failedFile = data.failed_file;
     rows = '';
     (data.results || []).forEach((item, idx) => {
         let user = '', pass = '';
