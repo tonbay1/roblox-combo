@@ -5,6 +5,14 @@ async function submitCombos() {
     const input = document.getElementById('combo-input').value.trim();
     if (!input) return;
     const combos = input.split('\n').map(l => l.trim()).filter(Boolean);
+    // ตรวจสอบรูปแบบ user:pass:cookie
+    for (const combo of combos) {
+        const parts = combo.split(':');
+        if (parts.length !== 3) {
+            alert('รูปแบบข้อมูลไม่ถูกต้อง: ' + combo);
+            return;
+        }
+    }
     // เตรียมตารางแสดงผลลัพธ์แบบเรียลไทม์
     let rows = '';
     window.comboSuccess = [];
