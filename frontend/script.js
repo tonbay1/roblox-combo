@@ -15,7 +15,12 @@ async function submitCombos() {
 
     // สร้างแถวตารางเริ่มต้น
     combos.forEach((combo, idx) => {
-        rows += `<tr id="row-${idx}"><td>${idx + 1}</td><td>${combo}</td><td id="status-${idx}"><span class="status-dot"></span></td></tr>`;
+        let user = '', pass = '';
+        let parts = combo.split(':');
+        user = parts[0] || '';
+        pass = parts[1] || '';
+        let showCombo = `${user}:${pass}`;
+        rows += `<tr id="row-${idx}"><td>${idx + 1}</td><td>${showCombo}</td><td id="status-${idx}"><span class="status-dot"></span></td></tr>`;
     });
     document.getElementById('table-body').innerHTML = rows;
     document.getElementById('table-summary').innerHTML = `<div class="summary">True: 0 | Failed: 0 | Waiting: ${combos.length}</div>`;
@@ -33,6 +38,13 @@ async function submitCombos() {
         results[idx] = item;
         let dotClass = item.status === 'success' ? 'green' : 'red';
         let dot = `<span class="status-dot ${dotClass}"></span>`;
+        // Render only user:pass in the table after checking
+        let user = '', pass = '';
+        let parts = item.combo.split(':');
+        user = parts[0] || '';
+        pass = parts[1] || '';
+        let showCombo = `${user}:${pass}`;
+        document.querySelector(`#row-${idx} td:nth-child(2)`).textContent = showCombo;
         document.getElementById('status-' + idx).innerHTML = dot;
         // อัปเดต success/failed
         if (item.status === 'success') {
@@ -105,14 +117,18 @@ window.addEventListener('DOMContentLoaded', function() {
 function copyCombos(type) {
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
     let text = arr.map(item => {
-        // สร้าง user:pass:cookies เสมอ (ถ้าไม่มี cookies ให้เว้นว่างหลัง : )
+        // ดึง user:pass:cookies เสมอ (cookies อาจมี : ได้)
         let user = '', pass = '', cookies = '';
         if (item.combo) {
             let parts = item.combo.split(':');
             user = parts[0] || '';
             pass = parts[1] || '';
+            cookies = parts.slice(2).join(':');
         }
-        cookies = (item.cookies !== undefined && item.cookies !== null) ? item.cookies : '';
+        // ถ้ามี item.cookies ให้ใช้แทน cookies ที่แยกจาก combo
+        if (item.cookies !== undefined && item.cookies !== null && item.cookies !== '') {
+            cookies = item.cookies;
+        }
         return `${user}:${pass}:${cookies}`;
     }).join('\n');
     if (text) {
