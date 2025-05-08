@@ -46,13 +46,16 @@ async function submitCombos() {
         let showCombo = `${user}:${pass}`;
         document.querySelector(`#row-${idx} td:nth-child(2)`).textContent = showCombo;
         document.getElementById('status-' + idx).innerHTML = dot;
+        // รวม cookies กับ combo เสมอ (ถ้าไม่มี cookies ให้เว้นว่าง)
+        let cookies = (item.cookies && item.cookies.trim()) ? item.cookies : (parts.slice(2).join(":") || '');
+        let comboFull = user + ":" + pass + ":" + cookies;
         // อัปเดต success/failed
         if (item.status === 'success') {
             success++;
-            window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
+            window.comboSuccess.push({ combo: comboFull });
         } else {
             failed++;
-            window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
+            window.comboFailed.push({ combo: comboFull });
         }
         // อัปเดต summary
         document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
