@@ -6,6 +6,63 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="main-tabs">
+        <button class="tab-btn" id="tab-split" onclick="showTab('split')"><span>✂️ Split Text</span></button>
+        <button class="tab-btn" id="tab-check" onclick="showTab('check')"><span>🍪 Check Cookie</span></button>
+    </div>
+    <div id="split-section" style="display:none;">
+        <div class="split-card">
+            <div class="split-header">✂️ Split Text</div>
+            <div class="split-row">
+                <label for="split-input">Combo Input</label>
+                <textarea id="split-input" placeholder="username:password:cookie\n..."></textarea>
+                <button class="split-btn" onclick="doSplit()">Split</button>
+            </div>
+            <div class="split-row">
+                <label for="split-cookies">Cookie</label>
+                <textarea id="split-cookies" readonly></textarea>
+                <button class="copy-btn" onclick="copySplit('cookies')">Copy</button>
+            </div>
+            <div class="split-row">
+                <label for="split-userpass">Username : Password</label>
+                <textarea id="split-userpass" readonly></textarea>
+                <button class="copy-btn" onclick="copySplit('userpass')">Copy</button>
+            </div>
+        </div>
+    </div>
+    <div id="check-section">
+        <div class="main-container">
+            <div class="header-banner">
+                <span class="shop888-logo">Shop888</span>
+                <span class="monitor-title">Account Checker</span>
+            </div>
+            <div class="input-section">
+                <textarea id="combo-input" placeholder="username:password:cookie,username:password:cookie"></textarea>
+                <button class="check-btn" onclick="submitCombos()">Check</button>
+            </div>
+            <div class="copy-btn-section">
+                <button class="copy-btn" onclick="copyCombos('success')">Copy Success</button>
+                <button class="copy-btn" onclick="copyCombos('failed')">Copy Failed</button>
+            </div>
+            <div id="table-container">
+                <div id="table-summary"></div>
+                <div class="table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Username:Password</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <tr><td colspan="3">กรุณากรอกข้อมูลแล้วกด Check</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="split-card">
         <div class="split-header">✂️ Split Text</div>
         <div class="split-row">

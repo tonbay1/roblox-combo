@@ -24,11 +24,17 @@ async function submitCombos() {
             : '<span class="status-dot red"></span>';
         if (item.status === 'success') {
             success++;
-            window.comboSuccess.push(item.combo);
+            window.comboSuccess.push({
+                combo: item.combo,
+                cookies: item.cookies || ''
+            });
         }
         if (item.status === 'failed') {
             failed++;
-            window.comboFailed.push(item.combo);
+            window.comboFailed.push({
+                combo: item.combo,
+                cookies: item.cookies || ''
+            });
         }
         rows += `<tr><td>${idx + 1}</td><td>${item.combo}</td><td>${dot}</td></tr>`;
     });
@@ -67,14 +73,34 @@ function copySplit(type) {
     }
 }
 
+function showTab(tab) {
+    const splitSec = document.getElementById('split-section');
+    const checkSec = document.getElementById('check-section');
+    const tabSplit = document.getElementById('tab-split');
+    const tabCheck = document.getElementById('tab-check');
+    if (tab === 'split') {
+        splitSec.style.display = '';
+        checkSec.style.display = 'none';
+        tabSplit.classList.add('active');
+        tabCheck.classList.remove('active');
+    } else {
+        splitSec.style.display = 'none';
+        checkSec.style.display = '';
+        tabSplit.classList.remove('active');
+        tabCheck.classList.add('active');
+    }
+}
+// ตั้งค่าหน้าเริ่มต้น
+window.addEventListener('DOMContentLoaded', function() {
+    showTab('check');
+});
+
 // เดิม
 function copyCombos(type) {
-    let text = '';
-    if (type === 'success') {
-        text = window.comboSuccess.join('\n');
-    } else if (type === 'failed') {
-        text = window.comboFailed.join('\n');
-    }
+    let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
+    let text = arr.map(item => {
+        return item.cookies ? `${item.combo}:${item.cookies}` : item.combo;
+    }).join('\n');
     if (text) {
         navigator.clipboard.writeText(text).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
