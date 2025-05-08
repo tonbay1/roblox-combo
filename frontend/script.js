@@ -36,6 +36,38 @@ async function submitCombos() {
     document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: 0</div>`;
 }
 
+function doSplit() {
+    const lines = document.getElementById('split-input').value.split('\n').map(l => l.trim()).filter(Boolean);
+    let userpass = [], cookies = [];
+    for (const line of lines) {
+        const parts = line.split(':');
+        if (parts.length === 2) {
+            userpass.push(line);
+        } else if (parts.length === 1 && parts[0] !== '') {
+            cookies.push(line);
+        } else if (parts.length >= 3) {
+            userpass.push(parts.slice(0,2).join(':'));
+            cookies.push(parts.slice(2).join(':'));
+        }
+    }
+    document.getElementById('split-cookies').value = cookies.join('\n');
+    document.getElementById('split-userpass').value = userpass.join('\n');
+}
+
+function copySplit(type) {
+    let val = '';
+    if (type === 'cookies') val = document.getElementById('split-cookies').value;
+    if (type === 'userpass') val = document.getElementById('split-userpass').value;
+    if (val) {
+        navigator.clipboard.writeText(val).then(() => {
+            alert('คัดลอก'+(type==='cookies'?' Cookie':' Username:Password')+' แล้ว!');
+        });
+    } else {
+        alert('ไม่มีข้อมูลให้คัดลอก');
+    }
+}
+
+// เดิม
 function copyCombos(type) {
     let text = '';
     if (type === 'success') {
