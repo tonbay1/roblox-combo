@@ -42,7 +42,7 @@ async function submitCombos() {
             // รับชื่อไฟล์รอบแรกเท่านั้น
             if (idx === 0) {
                 if (data.success_file) window.successFile = data.success_file;
-                if (data.failed_file) window.failedFile = data.failedFile;
+                if (data.failed_file) window.failedFile = data.failed_file;
             }
             let item = (data.results || [])[0];
             let [user, pass] = item.combo.split(':');
