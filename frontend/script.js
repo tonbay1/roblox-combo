@@ -121,15 +121,16 @@ window.addEventListener('DOMContentLoaded', function() {
 function copyCombos(type) {
     // ใช้ข้อมูลใน memory ที่อัปเดตล่าสุดเท่านั้น
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
-    // ลบ duplicate และบรรทัดว่าง โดยใช้ user:pass:cookies
+    // ลบ duplicate และบรรทัดว่าง โดยใช้ user:pass:cookies (cookies fallback จาก combo ถ้า property ว่าง)
     let seen = new Set();
     let combos = arr.map(item => {
         let parts = item.combo.split(":");
         let user = parts[0] || '';
         let pass = parts[1] || '';
-        // ใช้ cookies จาก property ถ้ามี (item.cookies)
-        let cookies = (item.cookies !== undefined && item.cookies !== null) ? item.cookies : (parts.slice(2).join(":") || '');
-        return user + ":" + pass + ":" + cookies;
+        // ถ้า item.cookies ว่าง ให้ fallback ไปใช้ cookies จาก combo เดิม
+        let cookies = (item.cookies && item.cookies.trim()) ? item.cookies : (parts.slice(2).join(":") || '');
+        // ถ้ามี cookies จริง ให้ต่อ :cookies, ถ้าไม่มีให้เป็น user:pass
+        return cookies ? (user + ":" + pass + ":" + cookies) : (user + ":" + pass);
     }).map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
     let text = combos.join('\n');
     if (text) {
