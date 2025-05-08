@@ -2,6 +2,14 @@ window.comboSuccess = [];
 window.comboFailed = [];
 
 async function submitCombos() {
+    // สร้าง session id ใหม่ทุกครั้งที่เช็ค (uuid v4)
+    function uuidv4() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    window.sessionId = uuidv4();
     const input = document.getElementById('combo-input').value.trim();
     if (!input) return;
     const combos = input.split('\n').map(l => l.trim()).filter(Boolean);
@@ -30,10 +38,13 @@ async function submitCombos() {
         let res = await fetch('/api/validate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({combos: [combo]})
+            body: JSON.stringify({combos: [combo], session_id: window.sessionId})
         });
         let data = await res.json();
-        let item = data[0];
+        // เก็บชื่อไฟล์ผลลัพธ์ของ session นี้ (ใช้ไฟล์ล่าสุดที่ได้)
+        if (data.success_file) window.successFile = data.success_file;
+        if (data.failed_file) window.failedFile = data.failed_file;
+        let item = data.results && data.results[0] ? data.results[0] : data[0];
         let dotClass = item.status === 'success' ? 'green' : 'red';
         let dot = `<span class="status-dot ${dotClass}"></span>`;
         // Render only user:pass in the table after checking
@@ -137,14 +148,16 @@ async function loadCombosFromFile(type) {
 }
 
 async function copyCombos(type) {
-    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก (แปลง user:pass:cookie เสมอ)
-    await loadCombosFromFile(type);
-    let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
-    // กรองเฉพาะบรรทัดที่มี user:pass (กันกรณีมีบรรทัดว่างหรือ format เพี้ยน)
-    let lines = arr.map(item => item.combo).filter(line => line && line.includes(":"));
-    let text = lines.join('\n');
-    if (text) {
-        navigator.clipboard.writeText(text).then(() => {
+    // โหลดไฟล์ผลลัพธ์ของ session นี้เท่านั้น
+    let file = type === 'success' ? window.successFile : window.failedFile;
+    if (!file) {
+        alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
+        return;
+    }
+    let res = await fetch(`/result/${file}`);
+    let text = await res.text();
+    if (text && text.trim()) {
+        navigator.clipboard.writeText(text.trim()).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
         });
     } else {
