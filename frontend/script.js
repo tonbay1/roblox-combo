@@ -5,14 +5,6 @@ async function submitCombos() {
     const input = document.getElementById('combo-input').value.trim();
     if (!input) return;
     const combos = input.split('\n').map(l => l.trim()).filter(Boolean);
-    // ตรวจสอบรูปแบบ user:pass:cookie
-    for (const combo of combos) {
-        const parts = combo.split(':');
-        if (parts.length !== 3) {
-            alert('รูปแบบข้อมูลไม่ถูกต้อง: ' + combo);
-            return;
-        }
-    }
     // เตรียมตารางแสดงผลลัพธ์แบบเรียลไทม์
     let rows = '';
     window.comboSuccess = [];
@@ -54,73 +46,19 @@ async function submitCombos() {
         let showCombo = `${user}:${pass}`;
         document.querySelector(`#row-${idx} td:nth-child(2)`).textContent = showCombo;
         document.getElementById('status-' + idx).innerHTML = dot;
-        // รวม cookies กับ combo เสมอ (ถ้าไม่มี cookies ให้เว้นว่าง)
-        let cookies = (item.cookies && item.cookies.trim()) ? item.cookies : (parts.slice(2).join(":") || '');
-        let comboFull = user + ":" + pass + ":" + cookies;
         // อัปเดต success/failed
         if (item.status === 'success') {
             success++;
-            window.comboSuccess.push({ combo: comboFull });
+            window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
         } else {
             failed++;
-            window.comboFailed.push({ combo: comboFull });
+            window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
         }
         // อัปเดต summary
         document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
     }));
-
-    // --- ไม่ต้องบันทึกไฟล์ผลลัพธ์จากฝั่ง JS แล้ว ---
-    // ให้ validateCookies.py เป็นคนสร้างไฟล์ผลลัพธ์เท่านั้น
-    // (JS ฝั่งนี้จะ read-only เฉพาะโหลดไฟล์มาแสดงหรือคัดลอก)
 }
 
-// โหลด combos จากไฟล์ (ผลลัพธ์ล่าสุด)
-async function loadCombosFromFile(type) {
-    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
-    let arr = [];
-    try {
-        const res = await fetch(file + '?t=' + Date.now());
-        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
-        const text = await res.text();
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-        arr = lines.map(line => ({ combo: line }));
-    } catch (e) {
-        alert('โหลดไฟล์ผลลัพธ์ไม่สำเร็จ: ' + e.message);
-    }
-    return arr;
-}
-
-// ฟังก์ชัน copyCombos ที่ถูกต้อง (อ่านไฟล์ผลลัพธ์ด้วย fetch แล้วจัดรูปแบบ user:pass:cookie เสมอ)
-async function copyCombos(type) {
-    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
-    let text = '';
-    try {
-        const res = await fetch(file + '?t=' + Date.now());
-        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
-        text = await res.text();
-    } catch (e) {
-        alert('ไม่พบไฟล์ผลลัพธ์');
-        return;
-    }
-    // ลบบรรทัดว่างและ duplicate
-    let seen = new Set();
-    let lines = text.split('\n').map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
-    // บังคับให้ทุกบรรทัดเป็น user:pass:cookie (ถ้าไม่มี cookie ให้เติมค่าว่าง)
-    let out = lines.map(line => {
-        let parts = line.split(":");
-        let user = parts[0] || '';
-        let pass = parts[1] || '';
-        let cookies = parts.slice(2).join(":");
-        return user + ":" + pass + ":" + (cookies ? cookies : "");
-    }).join('\n');
-    if (out) {
-        navigator.clipboard.writeText(out).then(() => {
-            alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
-        });
-    } else {
-        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
-    }
-}
 
 function doSplit() {
     const lines = document.getElementById('split-input').value.split('\n').map(l => l.trim()).filter(Boolean);
@@ -176,41 +114,35 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // เดิม
-// ไม่ต้องใช้ loadCombosFromFile() ในการคัดลอกอีกต่อไป
-// ฟังก์ชันนี้ยังคงใช้ได้หากต้องการโหลดผลลัพธ์จากไฟล์ใหม่จริงๆ
-// แต่ copyCombos จะไม่เรียกใช้ฟังก์ชันนี้อีกต่อไป
+async function loadCombosFromFile(type) {
+    // type = 'success' or 'failed'
+    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
+    let arr = [];
+    try {
+        const res = await fetch(file + '?t=' + Date.now()); // ป้องกัน cache
+        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
+        const text = await res.text();
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        arr = lines.map(line => ({ combo: line }));
+    } catch (e) {
+        alert('โหลดไฟล์ผลลัพธ์ไม่สำเร็จ: ' + e.message);
+    }
+    if (type === 'success') window.comboSuccess = arr;
+    else window.comboFailed = arr;
+    return arr;
+}
 
 async function copyCombos(type) {
-    // โหลดผลลัพธ์ล่าสุดจากไฟล์ (จะได้ user:pass:cookies ครบ)
-    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
-    let text = '';
-    try {
-        const res = await fetch(file + '?t=' + Date.now());
-        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
-        text = await res.text();
-    } catch (e) {
-        alert('ไม่พบไฟล์ผลลัพธ์');
-        return;
-    }
-    // ลบบรรทัดว่างและ duplicate
-    let seen = new Set();
-    let lines = text.split('\n').map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
-    // บังคับให้ทุกบรรทัดเป็น user:pass:cookies (ถ้าไม่มี cookies ให้เติมค่าว่าง)
-    let out = lines.map(line => {
-        let parts = line.split(":");
-        let user = parts[0] || '';
-        let pass = parts[1] || '';
-        let cookies = parts.slice(2).join(":");
-        // ถ้าไม่มี cookies ให้เติมช่องว่าง
-        return user + ":" + pass + ":" + (cookies ? cookies : "");
-    }).join('\n');
-    if (out) {
-        navigator.clipboard.writeText(out).then(() => {
+    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
+    await loadCombosFromFile(type);
+    let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
+    let text = arr.map(item => item.combo).join('\n');
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
         });
     } else {
         alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
     }
 }
-
 
