@@ -152,25 +152,20 @@ async function loadCombosFromFile(type) {
 }
 
 async function copyCombos(type) {
-    // โหลดไฟล์ผลลัพธ์ของ session นี้เท่านั้น
-    let file = type === 'success' ? window.successFile : window.failedFile;
-    if (!file) {
-        alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
+    // คัดลอกจากผลลัพธ์ในหน้านี้ (session ปัจจุบัน)
+    let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
+    if (!arr || arr.length === 0) {
+        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
         return;
     }
-    try {
-        let res = await fetch(`/result/${file}`);
-        if (!res.ok) throw new Error();
-        let text = await res.text();
-        if (text && text.trim()) {
-            navigator.clipboard.writeText(text.trim()).then(() => {
-                alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
-            });
-        } else {
-            alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
-        }
-    } catch (e) {
-        alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
+    // แปลงเป็นข้อความ user:pass:cookie (ถ้ามี cookie)
+    let text = arr.map(o => o.combo + (o.cookies ? (":" + o.cookies) : "")).join('\n');
+    if (text && text.trim()) {
+        navigator.clipboard.writeText(text.trim()).then(() => {
+            alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
+        });
+    } else {
+        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
     }
 }
 
