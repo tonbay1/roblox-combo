@@ -116,7 +116,7 @@ window.addEventListener('DOMContentLoaded', function() {
 // เดิม
 async function loadCombosFromFile(type) {
     // type = 'success' or 'failed'
-    let file = type === 'success' ? '../account/result/validate_success.txt' : '../account/result/validate_false.txt';
+    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
     let arr = [];
     try {
         const res = await fetch(file + '?t=' + Date.now()); // ป้องกัน cache
