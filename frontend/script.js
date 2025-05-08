@@ -90,49 +90,37 @@ async function loadCombosFromFile(type) {
     return arr;
 }
 
-// คัดลอก combos จากไฟล์ผลลัพธ์ล่าสุด
+// ฟังก์ชัน copyCombos ที่ถูกต้อง (อ่านไฟล์ผลลัพธ์ด้วย fetch แล้วจัดรูปแบบ user:pass:cookie เสมอ)
 async function copyCombos(type) {
-    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
-    let arr = await loadCombosFromFile(type);
+    let file = type === 'success' ? '/result/validate_success.txt' : '/result/validate_false.txt';
+    let text = '';
+    try {
+        const res = await fetch(file + '?t=' + Date.now());
+        if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
+        text = await res.text();
+    } catch (e) {
+        alert('ไม่พบไฟล์ผลลัพธ์');
+        return;
+    }
+    // ลบบรรทัดว่างและ duplicate
     let seen = new Set();
-    let combos = arr.map(item => {
-        let parts = item.combo.split(":");
+    let lines = text.split('\n').map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
+    // บังคับให้ทุกบรรทัดเป็น user:pass:cookie (ถ้าไม่มี cookie ให้เติมค่าว่าง)
+    let out = lines.map(line => {
+        let parts = line.split(":");
         let user = parts[0] || '';
         let pass = parts[1] || '';
         let cookies = parts.slice(2).join(":");
-        // บังคับเติม : เสมอ (user:pass:cookie) ถ้าไม่มี cookie ให้เว้นว่าง
         return user + ":" + pass + ":" + (cookies ? cookies : "");
-    }).map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
-    let text = combos.join('\n');
-    if (text) {
-        navigator.clipboard.writeText(text).then(() => {
+    }).join('\n');
+    if (out) {
+        navigator.clipboard.writeText(out).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
         });
     } else {
         alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
     }
 }
-
-    // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
-    let arr = await loadCombosFromFile(type);
-    let seen = new Set();
-    let combos = arr.map(item => {
-        let parts = item.combo.split(":");
-        let user = parts[0] || '';
-        let pass = parts[1] || '';
-        let cookies = parts.slice(2).join(":");
-        return cookies ? (user + ":" + pass + ":" + cookies) : (user + ":" + pass);
-    }).map(line => line.trim()).filter(line => line && !seen.has(line) && seen.add(line));
-    let text = combos.join('\n');
-    if (text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
-        });
-    } else {
-        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
-    }
-
-
 
 function doSplit() {
     const lines = document.getElementById('split-input').value.split('\n').map(l => l.trim()).filter(Boolean);
