@@ -28,7 +28,7 @@ async function submitCombos() {
     // เช็คแต่ละ combo ทีละอันแบบ async
     await Promise.all(combos.map(async (combo, idx) => {
         // ส่งไปเช็คทีละอัน (สมมติ API รองรับ /api/validateCookies)
-        let res = await fetch('/api/validateCookies', {
+        let res = await fetch('/api/validate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({combos: [combo]})
