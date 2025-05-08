@@ -61,20 +61,9 @@ async function submitCombos() {
         document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
     }));
 
-    // --- บันทึกผลลัพธ์ success และ failed ลงไฟล์ผ่าน backend ---
-    // ถ้ามี backend API /api/writeResult ให้ส่งข้อมูลไปบันทึก
-    try {
-        await fetch('/api/writeResult', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                success: window.comboSuccess.map(item => item.combo),
-                failed: window.comboFailed.map(item => item.combo)
-            })
-        });
-    } catch (e) {
-        console.error('บันทึกไฟล์ผลลัพธ์ไม่สำเร็จ:', e);
-    }
+    // --- ไม่ต้องบันทึกไฟล์ผลลัพธ์จากฝั่ง JS แล้ว ---
+    // ให้ validateCookies.py เป็นคนสร้างไฟล์ผลลัพธ์เท่านั้น
+    // (JS ฝั่งนี้จะ read-only เฉพาะโหลดไฟล์มาแสดงหรือคัดลอก)
 }
 
 // โหลด combos จากไฟล์ (ผลลัพธ์ล่าสุด)
