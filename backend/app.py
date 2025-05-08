@@ -31,6 +31,7 @@ def validate():
     failed_lines = []
     # ลบไฟล์เก่ากว่า 24 ชั่วโมง
     result_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
+    os.makedirs(result_dir, exist_ok=True)  # สร้างโฟลเดอร์ถ้ายังไม่มี
     now = time.time()
     for fname in os.listdir(result_dir):
         fpath = os.path.join(result_dir, fname)
