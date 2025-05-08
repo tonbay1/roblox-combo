@@ -54,13 +54,14 @@ def validate_cookies():
     print('success_lines:', success_lines)
     print('failed_lines:', failed_lines)
 
-    # Save results to files (append mode)
+    # Save results to files (write mode)
     result_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
     os.makedirs(result_dir, exist_ok=True)
-    with open(os.path.join(result_dir, 'validate_success.txt'), 'a', encoding='utf-8') as f:
+    # เขียนทับไฟล์ใหม่ทุกครั้ง (เหมือน validateCookies.py)
+    with open(os.path.join(result_dir, 'validate_success.txt'), 'w', encoding='utf-8') as f:
         for line in success_lines:
             f.write(line + '\n')
-    with open(os.path.join(result_dir, 'validate_false.txt'), 'a', encoding='utf-8') as f:
+    with open(os.path.join(result_dir, 'validate_false.txt'), 'w', encoding='utf-8') as f:
         for line in failed_lines:
             f.write(line + '\n')
 
