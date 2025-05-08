@@ -23,10 +23,20 @@ def serve_static(path):
 
 @app.route('/api/validate', methods=['POST'])
 def validate():
+    import time
+    session_id = request.json.get('session_id')
     combos = request.json.get('combos', [])
     results = []
     success_lines = []
     failed_lines = []
+    # ลบไฟล์เก่ากว่า 24 ชั่วโมง
+    result_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
+    now = time.time()
+    for fname in os.listdir(result_dir):
+        fpath = os.path.join(result_dir, fname)
+        if os.path.isfile(fpath):
+            if now - os.path.getmtime(fpath) > 24*3600:
+                os.remove(fpath)
     for idx, combo in enumerate(combos, 1):
         parts = combo.strip().split(':')
         if len(parts) < 3:
@@ -59,18 +69,23 @@ def validate():
     print('success_lines:', success_lines)
     print('failed_lines:', failed_lines)
 
-    # Save results to files (write mode)
+    # Save results to files (write mode, per session)
     result_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'result'))
     os.makedirs(result_dir, exist_ok=True)
-    # เขียนทับไฟล์ใหม่ทุกครั้ง (เหมือน validateCookies.py)
-    with open(os.path.join(result_dir, 'validate_success.txt'), 'w', encoding='utf-8') as f:
+    success_file = f'validate_success_{session_id}.txt'
+    failed_file = f'validate_false_{session_id}.txt'
+    with open(os.path.join(result_dir, success_file), 'w', encoding='utf-8') as f:
         for line in success_lines:
             f.write(line + '\n')
-    with open(os.path.join(result_dir, 'validate_false.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(result_dir, failed_file), 'w', encoding='utf-8') as f:
         for line in failed_lines:
             f.write(line + '\n')
 
-    return jsonify(results)
+    return jsonify({
+        'results': results,
+        'success_file': success_file,
+        'failed_file': failed_file
+    })
 
 if __name__ == '__main__':
     import os
