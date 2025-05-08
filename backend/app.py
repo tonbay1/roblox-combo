@@ -82,6 +82,10 @@ def validate():
         for line in failed_lines:
             f.write(line + '\n')
 
+    # DEBUG: print path for confirmation
+    print('Write success_file:', os.path.join(result_dir, success_file))
+    print('Write failed_file:', os.path.join(result_dir, failed_file))
+
     return jsonify({
         'results': results,
         'success_file': success_file,
