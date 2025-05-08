@@ -122,7 +122,7 @@ async function loadCombosFromFile(type) {
         const res = await fetch(file + '?t=' + Date.now()); // ป้องกัน cache
         if (!res.ok) throw new Error('ไม่พบไฟล์ผลลัพธ์');
         const text = await res.text();
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const lines = text.split('\n').filter(line => line.trim() !== '');
         arr = lines.map(line => ({ combo: line }));
     } catch (e) {
         alert('โหลดไฟล์ผลลัพธ์ไม่สำเร็จ: ' + e.message);
@@ -136,16 +136,7 @@ async function copyCombos(type) {
     // โหลดข้อมูลล่าสุดจากไฟล์ก่อนคัดลอก
     await loadCombosFromFile(type);
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
-    let text = arr.map(item => {
-        let user = '', pass = '', cookies = '';
-        if (item.combo) {
-            let parts = item.combo.split(':');
-            user = parts[0] || '';
-            pass = parts[1] || '';
-            cookies = parts.slice(2).join(':');
-        }
-        return `${user}:${pass}:${cookies}`;
-    }).join('\n');
+    let text = arr.map(item => item.combo).join('\n');
     if (text) {
         navigator.clipboard.writeText(text).then(() => {
             alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
