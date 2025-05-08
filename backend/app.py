@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify, send_from_directory
 from roblox_helper import RobloxHelper
 import os
 
+app = Flask(__name__)
+
 # เพิ่มเติมสำหรับ serve ไฟล์ result
 @app.route('/result/<filename>')
 def serve_result_file(filename):
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../account/result'))
     return send_from_directory(base_dir, filename)
-
-app = Flask(__name__)
 
 # Serve frontend static files
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend'))
