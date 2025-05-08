@@ -5,40 +5,48 @@ async function submitCombos() {
     const input = document.getElementById('combo-input').value.trim();
     if (!input) return;
     const combos = input.split('\n').map(l => l.trim()).filter(Boolean);
-    // Show loading
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="3">กำลังตรวจสอบ...</td></tr>';
-    document.getElementById('table-summary').innerHTML = '';
+    // เตรียมตารางแสดงผลลัพธ์แบบเรียลไทม์
+    let rows = '';
     window.comboSuccess = [];
     window.comboFailed = [];
-    const res = await fetch('/api/validate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({combos})
-    });
-    const data = await res.json();
-    let rows = '';
+    let statusArr = combos.map(() => 'waiting');
+    let results = new Array(combos.length);
     let success = 0, failed = 0;
-    data.forEach((item, idx) => {
-        let dot = `<td><span class="status-dot ${item.status === 'success' ? 'green' : 'red'}"></span></td>`;
-        if (item.status === 'success') {
-            success++;
-            window.comboSuccess.push({
-                combo: item.combo,
-                cookies: item.cookies || ''
-            });
-        }
-        if (item.status === 'failed') {
-            failed++;
-            window.comboFailed.push({
-                combo: item.combo,
-                cookies: item.cookies || ''
-            });
-        }
-        rows += `<tr><td>${idx + 1}</td><td>${item.combo}</td><td>${dot}</td></tr>`;
+
+    // สร้างแถวตารางเริ่มต้น
+    combos.forEach((combo, idx) => {
+        rows += `<tr id="row-${idx}"><td>${idx + 1}</td><td>${combo}</td><td id="status-${idx}"><span class="status-dot"></span></td></tr>`;
     });
     document.getElementById('table-body').innerHTML = rows;
-    document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: 0</div>`;
+    document.getElementById('table-summary').innerHTML = `<div class="summary">True: 0 | Failed: 0 | Waiting: ${combos.length}</div>`;
+
+    // เช็คแต่ละ combo ทีละอันแบบ async
+    await Promise.all(combos.map(async (combo, idx) => {
+        // ส่งไปเช็คทีละอัน (สมมติ API รองรับ /api/validate/single)
+        let res = await fetch('/api/validate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({combos: [combo]})
+        });
+        let data = await res.json();
+        let item = data[0];
+        results[idx] = item;
+        let dotClass = item.status === 'success' ? 'green' : 'red';
+        let dot = `<span class="status-dot ${dotClass}"></span>`;
+        document.getElementById('status-' + idx).innerHTML = dot;
+        // อัปเดต success/failed
+        if (item.status === 'success') {
+            success++;
+            window.comboSuccess.push({ combo: item.combo, cookies: item.cookies || '' });
+        } else {
+            failed++;
+            window.comboFailed.push({ combo: item.combo, cookies: item.cookies || '' });
+        }
+        // อัปเดต summary
+        document.getElementById('table-summary').innerHTML = `<div class="summary">True: ${success} | Failed: ${failed} | Waiting: ${combos.length - (success + failed)}</div>`;
+    }));
 }
+
 
 function doSplit() {
     const lines = document.getElementById('split-input').value.split('\n').map(l => l.trim()).filter(Boolean);
@@ -97,11 +105,14 @@ window.addEventListener('DOMContentLoaded', function() {
 function copyCombos(type) {
     let arr = type === 'success' ? window.comboSuccess : window.comboFailed;
     let text = arr.map(item => {
-        // บังคับให้เป็น user:pass:cookies เสมอ (ถ้าไม่มี cookies ให้ว่าง)
-        let parts = item.combo.split(':');
-        let user = parts[0] || '';
-        let pass = parts[1] || '';
-        let cookies = item.cookies !== undefined ? item.cookies : '';
+        // สร้าง user:pass:cookies เสมอ (ถ้าไม่มี cookies ให้เว้นว่างหลัง : )
+        let user = '', pass = '', cookies = '';
+        if (item.combo) {
+            let parts = item.combo.split(':');
+            user = parts[0] || '';
+            pass = parts[1] || '';
+        }
+        cookies = (item.cookies !== undefined && item.cookies !== null) ? item.cookies : '';
         return `${user}:${pass}:${cookies}`;
     }).join('\n');
     if (text) {
