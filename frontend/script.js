@@ -154,14 +154,19 @@ async function copyCombos(type) {
         alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
         return;
     }
-    let res = await fetch(`/result/${file}`);
-    let text = await res.text();
-    if (text && text.trim()) {
-        navigator.clipboard.writeText(text.trim()).then(() => {
-            alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
-        });
-    } else {
-        alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
+    try {
+        let res = await fetch(`/result/${file}`);
+        if (!res.ok) throw new Error();
+        let text = await res.text();
+        if (text && text.trim()) {
+            navigator.clipboard.writeText(text.trim()).then(() => {
+                alert('คัดลอกบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'แล้ว!');
+            });
+        } else {
+            alert('ไม่มีบัญชี'+(type==='success'?'ที่ใช้ได้':'ที่ใช้ไม่ได้')+'ให้คัดลอก');
+        }
+    } catch (e) {
+        alert('ยังไม่มีผลลัพธ์สำหรับคัดลอก');
     }
 }
 
